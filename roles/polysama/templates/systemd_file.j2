@@ -1,0 +1,37 @@
+[Unit]
+Description=Polkadot Service
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User={{ system_username }}
+
+
+ExecStart=/usr/local/bin/{{item.service_name}} \
+            --chain=kusama \
+            -d {{item.folder}} \
+            --telemetry-url 'wss://telemetry-backend.w3f.community/submit 1' \
+            --name {{item.name}} \
+            --database=paritydb \
+            --prometheus-external \
+            --workers-path /usr/local/bin/{{item.service_name}}-workers \
+            --validator \
+            --port {{item.p2p_port}} \
+            --rpc-port {{item.rpc_port}} \
+            --prometheus-port={{item.prom_port}} \
+            --state-pruning 100 \
+{% if item.get_key is defined %}
+            --blocks-pruning 100 \
+            --rpc-cors=all \
+            --rpc-external \
+            --rpc-methods=Unsafe
+{% else %}
+            --blocks-pruning 100
+{% endif %}
+Restart=on-failure
+
+TimeoutSec=infinity
+RestartSec=10
+[Install]
+WantedBy=multi-user.target
