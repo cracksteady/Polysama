@@ -1,0 +1,88 @@
+---
+- name: Install curl
+  apt:
+    name: curl
+    state: present
+    update_cache: true
+- name: Ensure a directory is present
+  file:
+    path: /usr/local/bin/{{item.service_name}}-workers
+    state: directory
+    mode: '0755'  # Use the desired permissions
+    owner: root
+    group: root
+  loop: "{{kusama_instances}}"
+- name: Fetch binary from a remote server
+  get_url:
+    url: https://github.com/paritytech/polkadot-sdk/releases/download/polkadot-v{{item.polkadot_version}}/polkadot-execute-worker
+    dest: "/usr/local/bin/{{item.service_name}}-workers/polkadot-execute-worker"
+    mode: '0755' 
+    force: true
+  loop: "{{kusama_instances}}"
+  register: config_update1
+  notify: restart kusama 1
+  until: config_update1 is succeeded
+  retries: 5
+  delay: 5
+- name: Fetch binary from a remote server
+  get_url:
+    url: https://github.com/paritytech/polkadot-sdk/releases/download/polkadot-v{{item.polkadot_version}}/polkadot-prepare-worker
+    dest: "/usr/local/bin/{{item.service_name}}-workers/polkadot-prepare-worker"
+    mode: '0755'  
+    force: true
+  loop: "{{kusama_instances}}"
+  register: config_update2
+  notify: restart kusama 2
+- name: Fetch binary from a remote server
+  get_url:
+    url: https://github.com/paritytech/polkadot-sdk/releases/download/polkadot-v{{item.polkadot_version}}/polkadot
+    dest: "/usr/local/bin/{{item.service_name}}"
+    mode: '0755'  
+    force: true
+  loop: "{{kusama_instances}}"
+  register: config_update3
+  notify: restart kusama 3
+- name: Copy systemd service file to remote
+  template:
+    src: systemd_file.j2
+    dest: /etc/systemd/system/{{item.service_name}}.service
+    owner: root
+    group: root
+    mode: '0644'
+  loop: "{{kusama_instances}}"
+  register: config_update4
+  notify: restart kusama 4
+
+- name: Reload systemd to read new service
+  systemd:
+    daemon_reload: yes
+
+- name: Enable and start service
+  systemd:
+    name: "{{item.service_name}}"
+    enabled: yes
+    state: started
+  loop: "{{kusama_instances}}"
+  
+- name: Wait for port {{item.rpc_port}} to become available
+  ansible.builtin.wait_for:
+    host: '127.0.0.1'  # The host where the port should be listening.
+    port: "{{item.rpc_port}}"  # The port to check.
+    state: started  # The state that indicates success. "started" means the port is listening.
+    timeout: 300  # The maximum time (in seconds) to wait for the port to be listening.  
+  when: item.get_key is defined
+  loop: "{{kusama_instances}}"
+
+- name: Get key if desired
+  shell: "curl -H \"Content-Type: application/json\" -d '{\"id\":1, \"jsonrpc\":\"2.0\", \"method\": \"author_rotateKeys\", \"params\":[]}' http://localhost:{{item.rpc_port}}"
+  when: item.get_key is defined
+  loop: "{{kusama_instances}}"
+  register: output
+
+- name: Print the output of the previous command
+  debug:
+    msg: "{{result.item.service_name}} - {{(result.stdout| from_json ).result}}"
+  loop: "{{ output.results }}"
+  loop_control:
+    loop_var: result
+  when: result.stdout is defined and result.stdout != ''
