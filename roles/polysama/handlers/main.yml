@@ -1,0 +1,28 @@
+- name: restart kusama 1
+  ansible.builtin.systemd:
+    name: "{{ item.item.service_name }}"
+    state: restarted
+    daemon_reload: yes
+  loop: "{{ config_update1.results }}"
+  when: item.changed
+- name: restart kusama 2
+  ansible.builtin.systemd:
+    name: "{{ item.item.service_name }}"
+    state: restarted
+    daemon_reload: yes
+  loop: "{{ config_update2.results }}"
+  when: item.changed
+- name: restart kusama 3
+  ansible.builtin.systemd:
+    name: "{{ item.item.service_name }}"
+    state: restarted
+    daemon_reload: yes
+  loop: "{{ config_update3.results }}"
+  when: item.changed
+- name: restart kusama 4
+  ansible.builtin.systemd:
+    name: "{{ item.item.service_name }}"
+    state: restarted
+    daemon_reload: yes
+  loop: "{{ config_update4.results }}"
+  when: item.changed
