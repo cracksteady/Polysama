@@ -1,0 +1,8 @@
+---
+system_username: kusama
+kusama_username: kusama
+version: 1.7.0
+kusama_instances:
+#add "get_key":1 to regenerate the key
+- {"service_name":"kusama-{{ kusama_username }}-1","polkadot_version":"{{ version }}","folder":"/home/{{ system_username }}/kusama-{{ kusama_username }}-1","name":"{{ kusama_username }}","p2p_port":30344,"rpc_port":9934,"prom_port":9616}
+- {"service_name":"kusama-{{ kusama_username }}-2","polkadot_version":"{{ version }}","folder":"/home/{{ system_username }}/kusama-{{ kusama_username }}-2","name":"{{ kusama_username }}-2","p2p_port":30345,"rpc_port":9935,"prom_port":9615}
