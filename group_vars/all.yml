@@ -1,6 +1,6 @@
 ---
-system_username: kusama
-kusama_username: kusama
+system_username: pauu
+kusama_username: pauuvalidator
 version: 1.7.0
 kusama_instances:
 #add "get_key":1 to regenerate the key
